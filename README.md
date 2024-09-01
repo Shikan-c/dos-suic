@@ -15,22 +15,22 @@ tkinter: Provides the GUI for configuring and controlling attacks.
 
 Installation
 Clone the repository:
-'''
+```
 git clone https://github.com/yourusername/DoS-Suic.git
-'''
-'''
+```
+```
 cd DoS-Suic
-'''
+```
 
 Install dependencies:
-'''
+```
 pip install requests
-'''
+```
 
 Run the tool:
-'''
+```
 python dos_suic.py
-'''
+```
 
 Usage
 Open the GUI
